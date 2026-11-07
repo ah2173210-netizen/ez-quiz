@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Hardest Quiz</title>
+<style>
+:root{--bg:#eef1f8;--card:#fff;--ink:#101a3d;--mute:#58628a;--line:#c8d0e6;--red:#d7263d;--gold:#ffb800;--ok:#1a8a4d;--okbg:#d7f3e2;--bad:#d7263d;--badbg:#ffe0e3;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#0e1330;--card:#19214a;--ink:#eef1ff;--mute:#a4aedb;--line:#323c78;--ok:#6be39b;--okbg:#14412a;--bad:#ff8c97;--badbg:#56202b}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#0e1330;--card:#19214a;--ink:#eef1ff;--mute:#a4aedb;--line:#323c78;--ok:#6be39b;--okbg:#14412a;--bad:#ff8c97;--badbg:#56202b}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Georgia,"Times New Roman",serif;line-height:1.45;min-height:100vh}
+main{max-width:620px;margin:0 auto;padding:24px 16px 40px}
+h1{font-size:2.4rem;line-height:1.05;margin:20px 0 8px;letter-spacing:-1px}
+h2{font-size:1.6rem;margin:0 0 6px}
+p{margin:0}
+.sub{color:var(--mute);margin-bottom:22px}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.list{display:grid;gap:12px}
+.mode{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;text-align:left;background:var(--card);border:2px solid var(--ink);border-radius:16px;padding:16px 18px;box-shadow:0 4px 0 var(--ink);font-size:1.15rem;font-weight:700}
+.mode small{display:block;font-weight:400;color:var(--mute);font-size:.9rem}
+.mode.main{background:var(--red);color:#fff;border-color:var(--ink)}
+.mode.main small{color:#ffe3e6}
+.mode:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.best{font-weight:700;white-space:nowrap;font-size:.95rem}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.back{border:2px solid var(--line);background:var(--card);border-radius:12px;padding:6px 12px;font-weight:700}
+.bar{flex:1;height:10px;background:var(--line);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ink);transition:width .3s}
+.count{font-weight:700;min-width:50px;text-align:right}
+.timer{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin-bottom:6px}
+.timer i{display:block;height:100%;background:var(--red);width:100%}
+.secs{text-align:right;color:var(--mute);font-size:.9rem;margin-bottom:12px}
+.tag{color:var(--mute);font-size:.95rem;margin-bottom:6px}
+.q{font-size:1.4rem;font-weight:700;margin-bottom:18px;line-height:1.3}
+.opts{display:grid;gap:10px}
+.opt{display:flex;gap:12px;align-items:center;text-align:left;background:var(--card);border:2px solid var(--ink);border-radius:14px;padding:14px;font-size:1.1rem;box-shadow:0 3px 0 var(--ink)}
+.opt b{display:inline-grid;place-items:center;min-width:30px;height:30px;border-radius:50%;border:2px solid var(--ink);font-size:.9rem}
+.opt:active:not(:disabled){transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+.opt.right{background:var(--okbg);border-color:var(--ok);box-shadow:0 3px 0 var(--ok)}
+.opt.wrong{background:var(--badbg);border-color:var(--bad);box-shadow:0 3px 0 var(--bad)}
+.msg{min-height:2rem;margin-top:16px;font-weight:700}
+.res{text-align:center;padding-top:24px}
+.res .score{font-size:4rem;font-weight:700;line-height:1;margin:14px 0 6px}
+.res .rank{font-size:1.3rem;margin-bottom:6px}
+.res .note{color:var(--mute);margin-bottom:24px}
+.btns{display:grid;gap:12px;max-width:320px;margin:0 auto}
+.btn{border:2px solid var(--ink);border-radius:14px;padding:14px;font-weight:700;font-size:1.1rem;background:var(--card);box-shadow:0 4px 0 var(--ink)}
+.btn.main{background:var(--gold);color:#101a3d}
+.theme{position:absolute;right:16px;top:calc(12px + env(safe-area-inset-top,0px));border:2px solid var(--line);background:var(--card);border-radius:12px;padding:6px 10px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<button class="theme" id="theme" aria-label="Switch light or dark mode">🌓</button>
+<main id="app"></main>
+<script>
+var app=document.getElementById('app'),timerId=null;
+var best={};
+try{var s=localStorage.getItem('hq-best');if(s)best=JSON.parse(s)||{};}catch(e){}
+function save(){try{localStorage.setItem('hq-best',JSON.stringify(best));}catch(e){}}
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+var SUBJECTS=['Math','Physics','Chemistry','Biology','English'];
+var Q=[
+['Math','∫ x·eˣ dx = ?',['xeˣ − eˣ + C','xeˣ + eˣ + C','x²eˣ/2 + C','eˣ/x + C'],0],
+['Math','d/dx [ ln(sin x) ] = ?',['cot x','tan x','1/sin x','−cot x'],0],
+['Math','lim (x→0) sin(3x)/x = ?',['1','3','0','1/3'],1],
+['Math','Sum of the infinite series 6 + 2 + 2/3 + 2/9 + …',['8','9','12','18'],1],
+['Math','(1 + i)⁸ = ?',['16','−16','16i','256'],0],
+['Math','∫ from 0 to π of sin²x dx = ?',['π/4','π/2','π','1'],1],
+['Physics','A ball is launched at 30 m/s at 30° above the horizontal (g = 10 m/s²). Its maximum height is:',['11.25 m','22.5 m','45 m','4.5 m'],0],
+['Physics','Capacitors of 6 µF and 3 µF are connected in series. The equivalent capacitance is:',['9 µF','2 µF','4.5 µF','18 µF'],1],
+['Physics','A radioactive sample has a half-life of 4 days. What fraction remains after 12 days?',['1/3','1/6','1/8','1/12'],2],
+['Physics','If the mass on a spring is quadrupled, the period of oscillation:',['halves','doubles','quadruples','stays the same'],1],
+['Physics','The energy stored in a 100 µF capacitor charged to 20 V is:',['0.02 J','0.04 J','0.2 J','2 J'],0],
+['Physics','The maximum efficiency of a heat engine working between 600 K and 300 K is:',['25%','50%','75%','100%'],1],
+['Chemistry','The pH of a 0.01 M Ba(OH)₂ solution is about:',['11.7','12.0','12.3','13.3'],2],
+['Chemistry','The hybridisation of each carbon atom in ethyne (C₂H₂) is:',['sp','sp²','sp³','sp³d'],0],
+['Chemistry','N₂ + 3H₂ ⇌ 2NH₃ is exothermic. Raising the temperature will:',['shift the equilibrium to the right','shift the equilibrium to the left','have no effect','double the equilibrium constant'],1],
+['Chemistry','The oxidation state of chromium in K₂Cr₂O₇ is:',['+3','+6','+7','+12'],1],
+['Chemistry','Which element has the highest first ionisation energy?',['Na','Al','Mg','Si'],3],
+['Chemistry','4 g of NaOH (M = 40 g/mol) dissolved to make 500 mL of solution gives a molarity of:',['0.1 M','0.2 M','0.4 M','2 M'],1],
+['Biology','Most ATP in aerobic respiration is produced during:',['Glycolysis','The Krebs cycle','Oxidative phosphorylation','Fermentation'],2],
+['Biology','A dihybrid cross AaBb × AaBb gives a phenotypic ratio of:',['3:1','1:2:1','9:3:3:1','1:1:1:1'],2],
+['Biology','Which enzyme unwinds the DNA double helix at the replication fork?',['DNA ligase','Helicase','Primase','RNA polymerase'],1],
+['Biology','In a population where q² = 0.04 (Hardy–Weinberg), the frequency of heterozygous carriers is:',['0.16','0.32','0.64','0.04'],1],
+['Biology','Okazaki fragments are synthesised on the:',['leading strand','lagging strand','mRNA template','tRNA molecule'],1],
+['Biology','Which hormone surge directly triggers ovulation?',['FSH','Progesterone','LH','Oestrogen'],2],
+['English','Which word means short-lived or fleeting?',['Ubiquitous','Ephemeral','Meticulous','Gregarious'],1],
+['English','“The wind whispered through the trees” is an example of:',['Metaphor','Hyperbole','Personification','Oxymoron'],2],
+['English','What is the antonym of “benevolent”?',['Malevolent','Munificent','Charitable','Amiable'],0],
+['English','A speech in which a character alone on stage reveals their inner thoughts is called a:',['Soliloquy','Epilogue','Allegory','Aside'],0],
+['English','Choose the correct sentence.',['Between you and I, it’s a secret.','Between you and me, it’s a secret.','Between you and myself, it’s a secret.','Between yourself and I, it’s a secret.'],1],
+['English','“Her magnanimous gesture surprised everyone.” Magnanimous means:',['generous and forgiving','angry and bitter','extremely shy','dishonest'],0]
+];
+function stop(){if(timerId){clearInterval(timerId);timerId=null;}}
+function home(){
+  stop();
+  var h='<h1>The Hardest Quiz</h1><p class="sub">Grade 12 questions. 30 seconds each. No hints.</p><div class="list">';
+  h+='<button class="mode main" data-k="Mixed"><span>Mixed challenge<small>10 questions from every subject</small></span><span class="best">'+(best.Mixed!=null?'Best '+best.Mixed+'/10':'')+'</span></button>';
+  SUBJECTS.forEach(function(n){h+='<button class="mode" data-k="'+n+'"><span>'+n+'<small>6 questions</small></span><span class="best">'+(best[n]!=null?'Best '+best[n]+'/6':'')+'</span></button>';});
+  app.innerHTML=h+'</div>';
+  app.querySelectorAll('.mode').forEach(function(b){b.onclick=function(){play(b.dataset.k);};});
+}
+function play(mode){
+  var pool=mode==='Mixed'?shuffle(Q).slice(0,10):shuffle(Q.filter(function(x){return x[0]===mode;}));
+  var qs=pool.map(function(x){var correct=x[2][x[3]];return{s:x[0],q:x[1],o:shuffle(x[2]),a:correct};});
+  var i=0,score=0,TIME=30;
+  function show(){
+    var q=qs[i],left=TIME,done=false;
+    var h='<div class="top"><button class="back" id="bk">Home</button><div class="bar"><i style="width:'+(i/qs.length*100)+'%"></i></div><div class="count">'+(i+1)+' / '+qs.length+'</div></div>';
+    h+='<div class="timer"><i id="tb"></i></div><div class="secs" id="sc">'+TIME+' s</div><div class="tag">'+q.s+'</div><div class="q">'+q.q+'</div><div class="opts">';
+    q.o.forEach(function(o,n){h+='<button class="opt" data-v="'+o.replace(/"/g,'&quot;')+'"><b>'+'ABCD'[n]+'</b><span>'+o+'</span></button>';});
+    h+='</div><div class="msg" id="msg" aria-live="polite"></div>';
+    app.innerHTML=h;
+    document.getElementById('bk').onclick=home;
+    function reveal(pick){
+      if(done)return;done=true;stop();
+      app.querySelectorAll('.opt').forEach(function(b){b.disabled=true;if(b.dataset.v===q.a)b.classList.add('right');else if(b===pick)b.classList.add('wrong');});
+      var m=document.getElementById('msg');
+      if(pick&&pick.dataset.v===q.a){score++;m.textContent='Correct.';}
+      else m.textContent=(pick?'Wrong. ':'Time’s up. ')+'The answer is '+q.a+'.';
+      setTimeout(function(){i++;if(i<qs.length)show();else finish();},1800);
+    }
+    app.querySelectorAll('.opt').forEach(function(b){b.onclick=function(){reveal(b);};});
+    stop();
+    timerId=setInterval(function(){
+      left--;
+      var sc=document.getElementById('sc'),tb=document.getElementById('tb');
+      if(sc)sc.textContent=left+' s';if(tb)tb.style.width=(left/TIME*100)+'%';
+      if(left<=0)reveal(null);
+    },1000);
+  }
+  function finish(){
+    stop();
+    var n=qs.length,pct=score/n;
+    if(best[mode]==null||score>best[mode]){best[mode]=score;save();}
+    var rank=pct>=.9?'Grade 12 genius':pct>=.7?'Top of the class':pct>=.5?'Getting there':'Time to study';
+    app.innerHTML='<div class="res"><h2>'+rank+'</h2><div class="score">'+score+'/'+n+'</div><p class="note">'+(mode==='Mixed'?'Mixed challenge':mode)+' result</p><div class="btns"><button class="btn main" id="again">Try again</button><button class="btn" id="hm">Home</button></div></div>';
+    document.getElementById('again').onclick=function(){play(mode);};
+    document.getElementById('hm').onclick=home;
+  }
+  show();
+}
+document.getElementById('theme').onclick=function(){
+  var r=document.documentElement,dark=r.getAttribute('data-theme')==='dark'||(!r.getAttribute('data-theme')&&matchMedia('(prefers-color-scheme: dark)').matches);
+  r.setAttribute('data-theme',dark?'light':'dark');
+};
+home();
+</script>
+</body>
+</html>
